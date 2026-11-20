@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "VI Clips YouTube Session Bridge",
+  "version": "1.0.0",
+  "description": "Share your YouTube session with your private VI Clips server when you import a link.",
+  "permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_title": "VI Clips YouTube Session Bridge",
+    "default_popup": "popup.html"
+  }
+}

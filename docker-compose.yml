@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clips}
+      POSTGRES_USER: ${POSTGRES_USER:-clips}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: [postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ${POSTGRES_USER:-clips} -d ${POSTGRES_DB:-clips}"]
+      interval: 5s
+      retries: 20
+  api:
+    build: ./backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    environment: &env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-clips}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB:-clips}
+      DATA_DIR: /data
+      WHISPER_MODEL: ${WHISPER_MODEL:-tiny}
+      HF_HOME: /data/models
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:${WEB_PORT:-3000}}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      FFMPEG_THREADS: ${FFMPEG_THREADS:-1}
+      WHISPER_THREADS: ${WHISPER_THREADS:-1}
+      WHISPER_BEAM_SIZE: ${WHISPER_BEAM_SIZE:-1}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+    volumes: [media:/data]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      retries: 20
+    depends_on:
+      db: {condition: service_healthy}
+  worker:
+    build: ./backend
+    command: python worker.py
+    environment: *env
+    volumes: [media:/data]
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    stop_grace_period: 10m
+  web:
+    build: ./web
+    environment:
+      API_URL: http://api:8000
+    ports: ["127.0.0.1:${WEB_PORT:-3000}:3000"]
+    depends_on: [api]
+volumes:
+  postgres:
+  media:

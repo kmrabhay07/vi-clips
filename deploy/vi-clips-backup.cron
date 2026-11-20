@@ -1,0 +1,4 @@
+# Example: customize the service account and private deployment directory before installation.
+CRON_TZ=Asia/Kolkata
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+15 3 * * * appuser VI_DEPLOY_ROOT=/opt/vi-clips /usr/bin/bash /opt/vi-clips/backup-oci.sh >> /opt/vi-clips/backups/backup.log 2>&1

@@ -1,0 +1,30 @@
+services:
+  db:
+    restart: unless-stopped
+    mem_limit: 768m
+    logging: &bounded_logs
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  api:
+    image: vi-clips-backend:oci
+    environment:
+      DEPLOYMENT_LABEL: Cloud processing
+      WORKER_CONCURRENCY: '2'
+    restart: unless-stopped
+    mem_limit: 1g
+    logging: *bounded_logs
+  worker:
+    image: vi-clips-backend:oci
+    build: !reset null
+    cpus: 1.75
+    mem_limit: 4g
+    environment:
+      WORKER_CONCURRENCY: '2'
+    logging: *bounded_logs
+  web:
+    image: vi-clips-web:oci
+    restart: unless-stopped
+    mem_limit: 1g
+    logging: *bounded_logs
